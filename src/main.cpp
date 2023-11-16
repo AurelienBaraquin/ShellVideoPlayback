@@ -39,14 +39,14 @@ int main(int ac, char **av)
         return -1;
     }
 
-    init_ncurses();
-    std::pair<int, int> src_size = getscrsize();
-
     cv::VideoCapture cap(av[1]);
     if (!cap.isOpened()) {
         std::cout << "Cannot open video file: " << av[1] << std::endl;
         return -1;
     }
+
+    init_ncurses();
+    std::pair<int, int> src_size = getscrsize();
 
     double fps = cap.get(cv::CAP_PROP_FPS);
     int delay = static_cast<int>(1000 / fps);
@@ -65,9 +65,8 @@ int main(int ac, char **av)
                 int img_y = static_cast<int>(y / scale);
                 int img_x = static_cast<int>(x / scale);
 
-                if (img_y >= frame.rows || img_x >= frame.cols) {
+                if (img_y >= frame.rows || img_x >= frame.cols)
                     continue;
-                }
 
                 cv::Vec3b color = frame.at<cv::Vec3b>(cv::Point(img_x, img_y));
                 int ncursesColorIndex = getClosestNcursesColorIndex({color[2], color[1], color[0]});
