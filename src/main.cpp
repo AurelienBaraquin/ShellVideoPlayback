@@ -2,24 +2,27 @@
 #include <iostream>
 #include <utility>
 #include <ncurses.h>
+#include "RGB.h"
+#include <chrono>
+#include <thread>
 
 void init_ncurses()
 {
     initscr();
-    cbreak();
+    raw();
+    keypad(stdscr, TRUE);
     noecho();
     curs_set(0);
     nodelay(stdscr, TRUE);
-    keypad(stdscr, TRUE);
     start_color();
-    init_pair(1, -1, COLOR_BLACK);
-    init_pair(2, -1, COLOR_RED);
-    init_pair(3, -1, COLOR_GREEN);
-    init_pair(4, -1, COLOR_YELLOW);
-    init_pair(5, -1, COLOR_BLUE);
-    init_pair(6, -1, COLOR_MAGENTA);
-    init_pair(7, -1, COLOR_CYAN);
-    init_pair(8, -1, COLOR_WHITE);
+    init_pair(1, COLOR_WHITE, COLOR_BLACK);
+    init_pair(2, COLOR_WHITE, COLOR_RED);
+    init_pair(3, COLOR_WHITE, COLOR_GREEN);
+    init_pair(4, COLOR_WHITE, COLOR_YELLOW);
+    init_pair(5, COLOR_WHITE, COLOR_BLUE);
+    init_pair(6, COLOR_WHITE, COLOR_MAGENTA);
+    init_pair(7, COLOR_WHITE, COLOR_CYAN);
+    init_pair(8, COLOR_WHITE, COLOR_WHITE);
 }
 
 std::pair<int, int> getscrsize()
@@ -45,22 +48,35 @@ int main(int ac, char **av)
         return -1;
     }
 
+    double fps = cap.get(cv::CAP_PROP_FPS);
+    int delay = static_cast<int>(1000 / fps);
+
     cv::Mat frame;
     while (true) {
         cap >> frame;
         if (frame.empty())
             break;
 
-        // Go through each pixel of the frame
-        for (int y = 0; y < frame.rows; y++) {
-            for (int x = 0; x < frame.cols; x++) {
-                cv::Vec3b color = frame.at<cv::Vec3b>(cv::Point(x, y));
-                // color[0], color[1], color[2] are B, G, R respectively
-                mvprintw(frame.rows / src_size.first * y,
-                         frame.cols / src_size.second * x,
-                         " ");
+        double scale = std::min(static_cast<double>(src_size.second) / frame.cols,
+                                static_cast<double>(src_size.first) / frame.rows);
+
+        for (int y = 0; y < src_size.first; ++y) {
+            for (int x = 0; x < src_size.second; ++x) {
+                int img_y = static_cast<int>(y / scale);
+                int img_x = static_cast<int>(x / scale);
+
+                if (img_y >= frame.rows || img_x >= frame.cols) {
+                    continue;
+                }
+
+                cv::Vec3b color = frame.at<cv::Vec3b>(cv::Point(img_x, img_y));
+                int ncursesColorIndex = getClosestNcursesColorIndex({color[2], color[1], color[0]});
+                attron(COLOR_PAIR(ncursesColorIndex));
+                mvprintw(y, x, " ");
+                attroff(COLOR_PAIR(ncursesColorIndex));
             }
         }
+        std::this_thread::sleep_for(std::chrono::milliseconds(delay));
 
         refresh();
     }
