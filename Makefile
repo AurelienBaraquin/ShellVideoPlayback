@@ -1,7 +1,7 @@
 CC = gcc
 CXX = g++
-CFLAGS = -Wall -Iinclude
-LDFLAGS = -lavformat -lavcodec -lavutil -lswscale
+CFLAGS = -Wall -Iinclude `pkg-config --cflags --libs opencv4` -lncurses
+LDFLAGS = `pkg-config --cflags --libs opencv4` -lncurses
 
 SRCDIR = src
 CPP_SOURCES = $(shell find $(SRCDIR) -name '*.cpp')
