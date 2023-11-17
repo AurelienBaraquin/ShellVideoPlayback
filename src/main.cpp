@@ -46,7 +46,6 @@ int main(int ac, char **av)
     }
 
     init_ncurses();
-    std::pair<int, int> src_size = getscrsize();
 
     double fps = cap.get(cv::CAP_PROP_FPS);
     int delay = static_cast<int>(1000 / fps);
@@ -56,6 +55,8 @@ int main(int ac, char **av)
         cap >> frame;
         if (frame.empty())
             break;
+        
+        std::pair<int, int> src_size = getscrsize();
 
         double scale = std::min(static_cast<double>(src_size.second) / frame.cols,
                                 static_cast<double>(src_size.first) / frame.rows);
